@@ -4,12 +4,11 @@ use std::io::{ BufReader, Result, Lines, prelude::* };
 use itertools::Itertools;
 
 fn main() -> Result<()> {
-    // part_1()
-    part_2()
+    part_1().and_then(|_| part_2())
 }
 
 fn part_1() -> Result<()> {
-    let mut priorities = Vec::new();
+    let mut sum_of_priorities = 0;
     for line_res in read_file("input.txt") {
         let line = line_res?;
         let half_of_len = line.len() / 2;
@@ -17,32 +16,27 @@ fn part_1() -> Result<()> {
         let second_half = &line[half_of_len..line.len()];
         let common = common_character_2(first_half, second_half);
         let priority = char_to_priority(common);
-        priorities.push(priority);
+        sum_of_priorities += priority;
     }
-    println!("Part one: {:?}", priorities.iter().sum::<u32>());
+    println!("Part one: {}", sum_of_priorities);
     Ok(())
 }
 
 fn part_2() -> Result<()> {
     let lines = read_file("input.txt");
     let chunks = &lines.chunks(3);
-    let mut priorities = Vec::new();
+    let mut sum_of_priorities = 0;
 
     for chunk in chunks {
         let mut iter = chunk.into_iter();
-        let line1 = iter.next().unwrap()?;
-        let line2 = iter.next().unwrap()?;
-        let line3 = iter.next().unwrap()?;
-        let common = common_character_3(line1.as_str(), line2.as_str(), line3.as_str());
+        let three_lines = [iter.next().unwrap()?, iter.next().unwrap()?, iter.next().unwrap()?];
+        let common = common_character_3(three_lines[0].as_str(), three_lines[1].as_str(), three_lines[2].as_str());
         let priority = char_to_priority(common);
-        priorities.push(priority);
+        sum_of_priorities += priority;
     }
-    println!("Part two: {:?}", priorities.iter().sum::<u32>());
+    println!("Part two: {}", sum_of_priorities);
     Ok(())
 }
-
-//part 1: 7581
-//part 2: 2525
 
 fn read_file(file_name: &str) -> Lines<BufReader<File>> {
     let file_name = String::from(file_name);
