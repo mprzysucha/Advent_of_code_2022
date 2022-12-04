@@ -21,9 +21,6 @@ fn main() {
     println!("Part two: {}", overlap_ranges);
 }
 
-// Part one: 569
-// Part two: 936
-
 fn create_ranges(line: &String) -> (Range, Range) {
     let split = line.split(",").flat_map(|s| s.split("-")).map(|s| parse(s)).collect::<Vec<u32>>();
     let r1 = Range::new(split[0], split[1]);
