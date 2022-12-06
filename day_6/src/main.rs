@@ -20,7 +20,7 @@ impl<T : PartialEq> UniqueElemsQueue for FixedVecDequeue<T> {
     fn all_different(&self) -> bool {
         for i in 0..self.size() - 1 {
             for j in 1..self.size() {
-                if i != j && *self.get(i) == *self.get(j) {
+                if i != j && self.get(i) == self.get(j) {
                     return false;
                 }
             }
