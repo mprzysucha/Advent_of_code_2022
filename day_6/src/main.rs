@@ -1,4 +1,3 @@
-use std::fmt::Debug;
 use aoctools::read_file;
 use foollections::FixedVecDequeue;
 
@@ -17,7 +16,7 @@ trait UniqueElemsQueue {
     fn all_different(&self) -> bool;
 }
 
-impl<T : PartialEq + Debug> UniqueElemsQueue for FixedVecDequeue<T> {
+impl<T : PartialEq> UniqueElemsQueue for FixedVecDequeue<T> {
     fn all_different(&self) -> bool {
         for i in 0..self.size() - 1 {
             for j in 1..self.size() {
@@ -46,7 +45,6 @@ fn process_line(line: &str, num_of_distinct_char: usize) -> usize {
 pub mod foollections {
     use std::collections::VecDeque;
 
-    #[derive(Debug)]
     pub struct FixedVecDequeue<T> {
         queue: VecDeque<T>,
         size: usize,
