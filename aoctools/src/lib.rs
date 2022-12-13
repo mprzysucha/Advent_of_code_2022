@@ -1,3 +1,4 @@
+use std::fs;
 use std::fs::File;
 use std::io::{ BufReader, Lines, prelude::* };
 
@@ -14,6 +15,14 @@ pub fn read_file_and_process<P>(file_name: &str, processor: P)
             Ok(line) => processor(line.as_str()),
             Err(e) => panic!("Problem when reading a file: {:?}", e),
         }
+    }
+}
+
+pub fn read_whole_file(file_name: &str) -> String {
+    if let Ok(content) = fs::read_to_string(file_name) {
+        return content;
+    } else {
+        panic!("Error reading {}", file_name);
     }
 }
 
