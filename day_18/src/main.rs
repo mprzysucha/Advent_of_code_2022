@@ -4,22 +4,6 @@ use aoctools::{parse, read_whole_file};
 fn main() {
     let positions: Vec<Position> = read_whole_file("input.txt").split("\n").filter(|s| !s.trim().is_empty()).map(|s| s.split(",").map(parse).collect::<Position>()).collect();
     let mut sum_exposed_sides = 0;
-    let mut max = Position(0, 0, 0);
-    for i in 0..positions.len() {
-        if &positions[i].0 > &max.0 {
-            max.0 = positions[i].0;
-        }
-        if &positions[i].1 > &max.1 {
-            max.1 = positions[i].1;
-        }
-        if &positions[i].2 > &max.2 {
-            max.2 = positions[i].2;
-        }
-    }
-    let mut externals: Vec<Rc<Position>> = Vec::new();
-    let mut visited: Vec<Rc<Position>> = Vec::new();
-    external(Rc::new(Position(0, 0, 0)), &mut visited, &mut externals, &positions, &max);
-
     for i in 0..positions.len() {
         let mut exposed_sides = 6;
         for j in 0..positions.len() {
@@ -37,6 +21,21 @@ fn main() {
     }
     println!("Part one: {}", sum_exposed_sides);
 
+    let mut max = Position(0, 0, 0);
+    for i in 0..positions.len() {
+        if &positions[i].0 > &max.0 {
+            max.0 = positions[i].0;
+        }
+        if &positions[i].1 > &max.1 {
+            max.1 = positions[i].1;
+        }
+        if &positions[i].2 > &max.2 {
+            max.2 = positions[i].2;
+        }
+    }
+    let mut externals: Vec<Rc<Position>> = Vec::new();
+    let mut visited: Vec<Rc<Position>> = Vec::new();
+    external(Rc::new(Position(0, 0, 0)), &mut visited, &mut externals, &positions, &max);
 
     let mut sides = 0;
     for i in 0..positions.len() {
