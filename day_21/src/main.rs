@@ -1,12 +1,7 @@
 extern crate core;
 
-use std::cmp::max;
 use std::collections::HashMap;
-// use std::ops::Div;
-// use std::string::ToString;
-use aoctools::{parse_i128, read_whole_file};
-// use crate::OpType::{Addition, Division, Multiplication, Subtraction};
-// use crate::Yell::{MathOp, Number};
+use aoctools::{parse_f64, read_whole_file};
 
 fn main() {
     let content = read_whole_file("input.txt");
@@ -21,105 +16,50 @@ fn main() {
         map.insert(key, val);
     }
 
-    println!("Part one: {:?}", get_number("root".to_string(), &map));
+    let part_one_result = get_number("root".to_string(), &map);
+
+    assert!(part_one_result.floor() == part_one_result.ceil());
+    println!("Part one: {:?}", part_one_result as i64);
 
     let root = &map.get("root");
-    println!("root: {}", root.unwrap());;
     let left = root.unwrap()[0..4].to_string();
     let right = root.unwrap()[7..11].to_string();
-    println!("left: {}, right: {}", left, right);
-    println!("left: {}, right: {}", get_number(left.to_string(), &map), get_number(right.to_string(), &map));
 
     let you_key: String = String::from("humn");
-    let you_val = 3502; // original value
+    let you_val = 3502.0; // original value
 
     let right_res = get_number_with_default_for_you(right.to_string(), &map, &you_key, you_val);
-    // let mut next_guess = 3848301405790 as i128;
-    // let mut next_guess = -34543543534 as i128;
-    let mut next_guess = you_val as i128; // start with original
+    let mut next_guess = you_val; // start with original
     let mut left_res = get_number_with_default_for_you(left.to_string(), &map, &you_key, next_guess);
 
-    println!("left:\t\t{}\nright:\t\t{}\ndiff(l-r):\t{}\n***", left_res, right_res, left_res - right_res);
-
-
     let mut diff = left_res - right_res;
-    let mut prev_diff = diff;
-    let mut prev_guess = next_guess;
-    let mut prev_left_res = left_res;
+    // let mut prev_diff = diff;
+    let prev_guess = next_guess;
+    let prev_left_res = left_res;
 
-    let mut diff_guess = 1000;
+    let diff_guess = 1000.0;
     next_guess = next_guess + diff_guess;
 
     left_res = get_number_with_default_for_you(left.to_string(), &map, &you_key, next_guess);
 
-    println!("***\n 0. \nleft:\t\t{}\nright:\t\t{}\ndiff(l-r):\t{}\n***", left_res, right_res, left_res - right_res);
+    let res_diff = prev_left_res - left_res;
+    let guess_diff = prev_guess - next_guess;
 
-    println!("prev left:\t{}\nleftdiff:\t{}", prev_left_res, prev_left_res - left_res);
-    println!("prev guess:\t{}\nguess:\t{}\ndiff guess:\t{}", prev_guess, next_guess, prev_guess - next_guess);
+    let factor: f64 = res_diff / guess_diff;
 
-
-    let res_diff = (prev_left_res - left_res) as i64;
-    let guess_diff = (prev_guess - next_guess) as i64;
-
-    let factor: f64 = res_diff as f64 / guess_diff as f64;
-
-    println!("{}", factor);
-
-
-
-    for i in 0..10 {
-        next_guess = next_guess + (((right_res - left_res) as f64) / factor) as i128;
-        println!("{}. next guess: {}", i, next_guess);
+    while diff.floor() != 0.0 {
+        next_guess = ((next_guess + ((right_res - left_res) / factor)) as i128) as f64;
         left_res = get_number_with_default_for_you(left.to_string(), &map, &you_key, next_guess);
-        prev_diff = diff;
+        // prev_diff = diff;
         diff = left_res - right_res;
-        println!("***\n {}. \nleft:\t\t{}\nright:\t\t{}\ndiff(l-r):\t{}\nprev diff:\t{}\n***", i, left_res, right_res, diff, prev_diff);
     }
 
-
-
-
-
-
-    // while (left_res != right_res) {
-    //     println!("  -->  {} \t {} \t {}", left_res, right_res, next_guess);
-    //     left_res = get_number_with_default_for_you(left.to_string(), &map, &you_key, next_guess);
-    //     if (left_res > right_res) {
-    //
-    //         // when guess goes up, result goes down
-    //         next_guess += max(1, left_res - right_res / 10);
-    //
-    //
-    //
-    //         // next_guess += 1;
-    //     } else if (left_res < right_res) {
-    //
-    //
-    //
-    //         next_guess -= max(1, right_res - left_res / 10);
-    //         // next_guess -= 1;
-    //     }
-    // }
-
-
-
-
-
-    println!("Part two: {}", next_guess);
-
-
-        // + 1_000_000_000 -> *10
-    // 2265089891482 -> 2256183602420
-    // 2256183602420
-
-
+    assert!(next_guess.floor() == next_guess.ceil());
+    println!("Part two: {}", next_guess as i64);
 
 }
 
-// Part one: 38731621732448
-// Part two: 3848301405790 - too high
-
-fn get_number_with_default_for_you(key: String, map: &HashMap<String, String>, you_key: &String, you_val: i128) -> i128 {
+fn get_number_with_default_for_you(key: String, map: &HashMap<String, String>, you_key: &String, you_val: f64) -> f64 {
     if key == *you_key {
         you_val
     } else if let Some(v) = map.get(key.as_str()) {
@@ -136,14 +76,14 @@ fn get_number_with_default_for_you(key: String, map: &HashMap<String, String>, y
             let split: Vec<&str> = v.split(" / ").collect();
             get_number_with_default_for_you(split[0].to_string(), &map, &you_key, you_val) / get_number_with_default_for_you(split[1].to_string(), &map, &you_key, you_val)
         } else {
-            parse_i128(v)
+            parse_f64(v)
         }
     } else {
         panic!("no key {} inside", key)
     }
 }
 
-fn get_number(key: String, map: &HashMap<String, String>) -> i128 {
+fn get_number(key: String, map: &HashMap<String, String>) -> f64 {
     if let Some(v) = map.get(key.as_str()) {
         if v.contains(" + ") {
             let split: Vec<&str> = v.split(" + ").collect();
@@ -158,12 +98,13 @@ fn get_number(key: String, map: &HashMap<String, String>) -> i128 {
             let split: Vec<&str> = v.split(" / ").collect();
             get_number(split[0].to_string(), &map) / get_number(split[1].to_string(), &map)
         } else {
-            parse_i128(v)
+            parse_f64(v)
         }
     } else {
         panic!("no key {} inside", key)
     }
 }
+
 //
 //
 //
