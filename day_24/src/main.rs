@@ -36,23 +36,24 @@ fn main() {
     let blizzards: Rc<RefCell<Vec<Blizzard>>> = Rc::new(RefCell::new(blizzards0));
 
     let mut direction: Direction = FirstGo;
-    let mut previous = Rc::new(Nil);
+    let previous = Rc::new(Nil);
 
     let mut tasks: LinkedList<LinkedList<Task>> = LinkedList::new();
-    let mut start_position = direction.start_position(max_x, max_y);
+    let start_position = direction.start_position(max_x, max_y);
     let task = Task {
         expedition: (start_position.0 as i32, start_position.1 as i32),
-        blizzards: Rc::clone(&blizzards),
-        minute,
         previous: Rc::clone(&previous),
     };
 
     tasks.push_back(LinkedList::from([task]));
     let mut stop = false;
+
+    let mut part_one_answer = 0;
+    let mut part_two_answer = 0;
+
     while !stop {
 
         let mut tasks_for_this_minute: LinkedList<Task> = tasks.pop_front().unwrap();
-
         let mut not_moved_yet = true; // move blizzards only once per each minute
         let mut tasks_for_next_minute: LinkedList<Task> = LinkedList::new();
         let mut adjacent_for_next_minute: HashSet<(i32, i32)> = HashSet::new();
@@ -69,24 +70,23 @@ fn main() {
             let solution_found = expedition.0 == solution.0 && expedition.1 == solution.1;
             if solution_found {
                 if direction == FirstGo {
-                    let list = Rc::new(Cons(expedition, Rc::clone(&task.previous)));
-                    let mut path: LinkedList<(i32, i32)> = LinkedList::new();
-                    build_path(Rc::clone(&list), &mut path);
+                    // let list = Rc::new(Cons(expedition, Rc::clone(&task.previous)));
+                    // let mut path: LinkedList<(i32, i32)> = LinkedList::new();
+                    // build_path(Rc::clone(&list), &mut path);
                     // print_all(path, Rc::clone(&blizzards), minute, max_x, max_y);
-                    println!("Part one: (above) {}", minute);
-                    previous = Rc::clone(&task.previous);
+                    part_one_answer = minute;
                     // stop = true;
                 }
                 if direction == GoWithSnack {
                     let list = Rc::new(Cons(expedition, Rc::clone(&task.previous)));
                     let mut path: LinkedList<(i32, i32)> = LinkedList::new();
                     build_path(Rc::clone(&list), &mut path);
-                    // print_all(path, Rc::clone(&blizzards), minute, max_x, max_y);
-                    println!("Part two: (above) {}", minute);
+                    print_all(path, Rc::clone(&blizzards), minute, max_x, max_y);
+                    part_two_answer = minute;
                     stop = true;
                 }
-                while let Some(r) = tasks_for_this_minute.pop_front() {}
-                while let Some(r) = tasks_for_next_minute.pop_front() {}
+                while let Some(_) = tasks_for_this_minute.pop_front() {}
+                while let Some(_) = tasks_for_next_minute.pop_front() {}
                 adjacent_for_next_minute.clear();
                 direction = direction.next();
             }
@@ -111,8 +111,6 @@ fn main() {
                         let previous = Rc::new(Cons(expedition, Rc::clone(&task.previous)));
                         let task = Task {
                             expedition: adjacents[i],
-                            blizzards: Rc::clone(&blizzards),
-                            minute: minute + 1,
                             previous: previous,
                         };
                         tasks_for_next_minute.push_back(task);
@@ -124,6 +122,10 @@ fn main() {
         minute += 1;
         tasks.push_back(tasks_for_next_minute);
     }
+
+    println!("Part one: {}", part_one_answer);
+    println!("Part two: {}", part_two_answer);
+
 
     let elapsed = now.elapsed();
     println!("elapsed: {:?}", elapsed);
@@ -147,7 +149,7 @@ impl Direction {
         }
     }
 
-    fn first_move(&self, max_x: usize, max_y: usize) -> (usize, usize) {
+    fn _first_move(&self, max_x: usize, max_y: usize) -> (usize, usize) {
         match self {
             FirstGo | GoWithSnack => (0, 0),
             BackForSnack => (max_x, max_y),
@@ -175,7 +177,7 @@ fn move_blizzards(blizzards: Rc<RefCell<Vec<Blizzard>>>, number_of_blizzards: us
     }
 }
 
-fn move_blizzards_and_print(blizzards: Rc<RefCell<Vec<Blizzard>>>, number_of_blizzards: usize, max_x: usize, max_y: usize, expedition: (i32, i32)) {
+fn _move_blizzards_and_print(blizzards: Rc<RefCell<Vec<Blizzard>>>, number_of_blizzards: usize, max_x: usize, max_y: usize, expedition: (i32, i32)) {
     for i in 0..number_of_blizzards {
         (*blizzards).borrow_mut()[i].mov(max_x, max_y);
     }
@@ -195,40 +197,44 @@ fn check_if_blizzard_here(blizzards: Rc<RefCell<Vec<Blizzard>>>, number_of_blizz
     blizzard_here
 }
 
-#[warn(dead_code)]
-fn wait() {
+fn _wait() {
     use std::io;
     use std::io::prelude::*;
     let mut stdin = io::stdin();
     let _ = stdin.read(&mut [0u8]).unwrap();
 }
 
-fn print_path(list: Rc<List>, minute: i32) {
+fn _print_path(list: Rc<List>, minute: i32) {
     match list.deref() {
         Cons((x, y), prev) => {
             println!("minute {}: ({}, {})", minute, x, y);
-            print_path(Rc::clone(prev), minute - 1);
+            _print_path(Rc::clone(prev), minute - 1);
         }
         Nil => (),
     }
 }
 
-fn build_path(list: Rc<List>, path: &mut LinkedList<(i32, i32)>) {
+fn build_path_rec(list: Rc<List>, path: &mut LinkedList<(i32, i32)>) {
     match list.deref() {
         Cons((x, y), prev) => {
             let xx = *x;
             let yy = *y;
             path.push_front((xx, yy));
             // println!("minute {}: ({}, {})", minute, x, y);
-            build_path(Rc::clone(prev), path);
+            build_path_rec(Rc::clone(prev), path);
         }
         Nil => (),
     }
 }
 
+fn build_path(list: Rc<List>, path: &mut LinkedList<(i32, i32)>) {
+    build_path_rec(Rc::clone(&list), path);
+    // path.pop_front(); // remove minut zero
+}
+
 fn print_all(path: LinkedList<(i32, i32)>, blizzards: Rc<RefCell<Vec<Blizzard>>>, minutes: usize, max_x: usize, max_y: usize) {
     let mut bs = blizzards.deref().borrow_mut();
-    for _ in 0..minutes {
+    for _ in 0..minutes + 1 { // + 1 to show initial state
         for i in 0..bs.len() {
             bs[i].mov_back(max_x, max_y);
         }
@@ -240,15 +246,19 @@ fn print_all(path: LinkedList<(i32, i32)>, blizzards: Rc<RefCell<Vec<Blizzard>>>
         num_of_blizzards += 1;
     }
     let rc_bs2 = Rc::new(RefCell::new(bs2));
-    for _ in 0..minutes {
+    for _ in 0..minutes + 1 {
         for i in 0..bs.len() {
             bs[i].mov(max_x, max_y);
         }
     }
-    let mut m = 1;
+    let mut m = 0;
     println!("************ PATH ************");
     for p in path {
-        println!("\nMinute: {}", m);
+        if m > 0 {
+            println!("\nMinute: {}", m);
+        } else {
+            println!("\nInitial state:");
+        }
         print(Rc::clone(&rc_bs2), p, max_x, max_y);
         move_blizzards(Rc::clone(&rc_bs2), num_of_blizzards, max_x, max_y);
         m += 1;
@@ -320,8 +330,6 @@ enum List {
 #[derive(Debug)]
 struct Task {
     expedition: (i32, i32),
-    blizzards: Rc<RefCell<Vec<Blizzard>>>,
-    minute: usize,
     previous: Rc<List>,
 }
 
