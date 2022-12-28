@@ -6,6 +6,8 @@ use std::time::{Duration, Instant};
 use aoctools::read_whole_file;
 
 fn main() {
+    let now_whole = Instant::now();
+
     let content = read_whole_file("input.txt");
     let lines: Vec<&str> = content.split("\n").filter(|s| !s.trim().is_empty()).collect();
 
@@ -35,29 +37,61 @@ fn main() {
     let east = Rc::new(Direction::E);
 
     let mut first_direction = Rc::clone(&north);
-    // println!("Initial:");
-    // println!("{:?}", elves);
 
-    let mut stop = false;
+    let mut stop = 0;
     let mut round = 0;
 
     let mut sum_of_durations = Duration::new(0, 0);
     let mut number_of_durations = 0;
 
-    while !stop {
+    while stop < 2 {
         let now = Instant::now();
 
         round += 1;
         let mut propositions: HashMap<i32, (String, Rc<Direction>)> = HashMap::new();
-        // println!("round {}, first_direction: {:?}", round, &first_direction);
 
         let mut els = vec![Duration::new(0, 0), Duration::new(0, 0), Duration::new(0, 0)];
 
+        let mut map: Vec<Vec<bool>> = Vec::new();
+        let mut min_x = 0;
+        let mut max_x = 0;
+        let mut min_y = 0;
+        let mut max_y = 0;
+        for elve in &elves {
+            if elve.x() < min_x {
+                min_x = elve.x();
+            }
+            if elve.x() > max_x {
+                max_x = elve.x();
+            }
+            if elve.y() < min_y {
+                min_y = elve.y();
+            }
+            if elve.y() > max_y {
+                max_y = elve.y();
+            }
+        }
+        min_x -= 1;
+        min_y -= 1;
+        max_x += 1;
+        max_y += 1;
+        for i in 0..=(max_x-min_x) {
+            map.push(Vec::new());
+            for j in 0..=(max_y-min_y) {
+                map[i as usize].push(false);
+            }
+        }
+        for elve in &elves {
+            map[(elve.x()-min_x) as usize][(elve.y()-min_y) as usize] = true;
+        }
+        // pri(&map);
+
+        let build_map_time = now.elapsed();
+
+        let now = Instant::now();
         for elve in &elves {
             let now0 = Instant::now();
-
-            if !elve.should_i_move(&elves) {
-                // println!("Elve {:?} can't move", &elve);
+            if !elve.should_i_move(&elves, &map, min_x, min_y) {
                 continue;
             }
             let mut direction = Rc::clone(&first_direction);
@@ -66,7 +100,7 @@ fn main() {
             els[0] += now0.elapsed();
             let now1 = Instant::now();
 
-            while direction_count < 4 && !elve.can_i_move(&direction, &elves) {
+            while direction_count < 4 && !elve.can_i_move(&direction, &elves, &map, min_x, min_y) {
                 direction = match direction.next() {
                     Direction::N => Rc::clone(&north),
                     Direction::S => Rc::clone(&south),
@@ -79,8 +113,6 @@ fn main() {
             els[1] += now1.elapsed();
             let now2 = Instant::now();
 
-
-            // println!("Elve {:?} will propose to move to {:?} (direction was changed {} times", elve, direction, direction_count);
             if direction_count < 4 {
                 let d = &*direction.borrow();
                 match d {
@@ -96,13 +128,12 @@ fn main() {
 
         }
 
-        println!("els: {:?}", els);
+        // println!("els: {:?}", els);
 
         let elapsed1 = now.elapsed();
 
         let mut propositions_counter: HashMap<String, i32> = HashMap::new();
         for proposition in &propositions {
-            // let k = proposition.1.0.id();
             let k = proposition.1.0.to_string();
             if propositions_counter.contains_key(&k) {
                 propositions_counter.insert((&k).to_string(), propositions_counter.get(&k).unwrap() + 1);
@@ -112,7 +143,6 @@ fn main() {
         }
         let elapsed2 = now.elapsed();
 
-        // println!("\n****************\npropositions:\n{:?}\n****************\n", propositions);
         let fd = &*first_direction.borrow();
         match fd {
             Direction::N => first_direction = Rc::clone(&south),
@@ -122,7 +152,6 @@ fn main() {
         }
         let mut number_of_moves = 0;
         for proposition in &propositions {
-            // let k = proposition.1.0.id();
             let k = proposition.1.0.to_string();
             let d = proposition.1.1.borrow();
             if *propositions_counter.get(&k).unwrap() == 1 {
@@ -138,16 +167,15 @@ fn main() {
         }
         let elapsed3 = now.elapsed();
 
-        // println!("{:?}", elves);
         let elapsed = now.elapsed();
         sum_of_durations += elapsed;
         number_of_durations += 1;
-        let avg_duration = sum_of_durations / number_of_durations;
-        println!("Round {}, number of moves {} time {:?} avg time: {:?}     after propositions: {:?}, after propositions count: {:?}, after moves: {:?} ", round, number_of_moves, elapsed, avg_duration, elapsed1, elapsed2, elapsed3);
+        // let avg_duration = sum_of_durations / number_of_durations;
+        // println!("Round {}, number of moves {} time {:?} avg time: {:?}     build_map_time: {:?}, after propositions: {:?}, after propositions count: {:?} (only count {:?}), after moves: {:?} (only moves: {:?})  ", round, number_of_moves, elapsed, avg_duration, build_map_time, elapsed1, elapsed2, elapsed2 - elapsed1, elapsed3, elapsed3 - elapsed2);
 
         if number_of_moves == 0 {
             println!("Part two: {}", round);
-            stop = true;
+            stop += 1;
         }
 
         if round == 10 {
@@ -177,18 +205,30 @@ fn main() {
             let area_without_elves = area - number_of_elves;
 
             println!("Part one: {}", area_without_elves);
+            stop += 1;
+
         }
 
 
 
     }
 
+    println!("Time: {:?}", now_whole.elapsed());
 
+}
 
-    // Part one: 3877
-    // Part two: 982
-
-
+fn pri(map: &Vec<Vec<bool>>) {
+    for y in 0..map[0].len() {
+        for x in 0..map.len() {
+            if map[x][y] {
+                print!("#");
+            } else {
+                print!(".");
+            }
+        }
+        println!();
+    }
+    println!();
 }
 
 fn cord(x: i32, y: i32) -> String {
@@ -222,37 +262,63 @@ struct Elve {
 }
 
 impl Elve {
-    // pub fn new(n: i32, x: i32, y: i32) -> Elve {
-    //     Elve { number: n, x: RefCell::new(x), y: RefCell::new(y) }
-    // }
+
     pub fn id(&self) -> i32 {
         self.number
     }
-    // pub fn cord(&self) -> String {
-    //     let mut id = self.x().to_string();
-    //     id.push_str(":");
-    //     id.push_str(self.y().to_string().as_str());
-    //     id
-    // }
 
-    pub fn should_i_move(&self, elves: &Vec<Elve>) -> bool {
-        !self.can_i_move(&Direction::N, elves) || !self.can_i_move(&Direction::S, elves) || !self.can_i_move(&Direction::E, elves) || !self.can_i_move(&Direction::W, elves)
+    fn w_border(&self, min_x: i32) -> bool {
+        self.x() - min_x == 0
+    }
+    fn e_border(&self, min_x: i32, max_x: i32) -> bool {
+        self.x() - min_x == max_x
+    }
+    fn n_border(&self, min_y: i32) -> bool {
+        self.y() - min_y == 0
+    }
+    fn s_border(&self, min_y: i32, max_y: i32) -> bool {
+        self.y() - min_y == max_y
     }
 
-    pub fn can_i_move(&self, d: &Direction, elves: &Vec<Elve>) -> bool {
+
+    pub fn should_i_move(&self, elves: &Vec<Elve>, map: &Vec<Vec<bool>>, min_x: i32, min_y: i32) -> bool {
+        let nw = map[((self.x() - 1)-min_x) as usize][((self.y() - 1)-min_y) as usize];
+        let n  = map[((self.x()    )-min_x) as usize][((self.y() - 1)-min_y) as usize];
+        let ne = map[((self.x() + 1)-min_x) as usize][((self.y() - 1)-min_y) as usize];
+        let w  = map[((self.x() - 1)-min_x) as usize][((self.y()    )-min_y) as usize];
+        let e  = map[((self.x() + 1)-min_x) as usize][((self.y()    )-min_y) as usize];
+        let sw = map[((self.x() - 1)-min_x) as usize][((self.y() + 1)-min_y) as usize];
+        let s  = map[((self.x()    )-min_x) as usize][((self.y() + 1)-min_y) as usize];
+        let se = map[((self.x() + 1)-min_x) as usize][((self.y() + 1)-min_y) as usize];
+        nw || n || ne || e || w || sw || s || se
+    }
+
+    pub fn can_i_move(&self, d: &Direction, elves: &Vec<Elve>, map: &Vec<Vec<bool>>, min_x: i32, min_y: i32) -> bool {
         match d {
-            Direction::N => elves.into_iter().filter(|e| e.x() == self.x() - 1 && e.y() == self.y() - 1).collect::<Vec<&Elve>>().len() == 0 &&
-                elves.into_iter().filter(|e| e.x() == self.x() && e.y() == self.y() - 1).collect::<Vec<&Elve>>().len() == 0 &&
-                elves.into_iter().filter(|e| e.x() == self.x() + 1 && e.y() == self.y() - 1).collect::<Vec<&Elve>>().len() == 0,
-            Direction::S => elves.into_iter().filter(|e| e.x() == self.x() - 1 && e.y() == self.y() + 1).collect::<Vec<&Elve>>().len() == 0 &&
-                elves.into_iter().filter(|e| e.x() == self.x() && e.y() == self.y() + 1).collect::<Vec<&Elve>>().len() == 0 &&
-                elves.into_iter().filter(|e| e.x() == self.x() + 1 && e.y() == self.y() + 1).collect::<Vec<&Elve>>().len() == 0,
-            Direction::W => elves.into_iter().filter(|e| e.x() == self.x() - 1 && e.y() == self.y() - 1).collect::<Vec<&Elve>>().len() == 0 &&
-                elves.into_iter().filter(|e| e.x() == self.x() - 1 && e.y() == self.y()).collect::<Vec<&Elve>>().len() == 0 &&
-                elves.into_iter().filter(|e| e.x() == self.x() - 1 && e.y() == self.y() + 1).collect::<Vec<&Elve>>().len() == 0,
-            Direction::E => elves.into_iter().filter(|e| e.x() == self.x() + 1 && e.y() == self.y() - 1).collect::<Vec<&Elve>>().len() == 0 &&
-                elves.into_iter().filter(|e| e.x() == self.x() + 1 && e.y() == self.y()).collect::<Vec<&Elve>>().len() == 0 &&
-                elves.into_iter().filter(|e| e.x() == self.x() + 1 && e.y() == self.y() + 1).collect::<Vec<&Elve>>().len() == 0,
+            Direction::N => {
+                let nw = map[((self.x() - 1)-min_x) as usize][((self.y() - 1)-min_y) as usize];
+                let n  = map[((self.x()    )-min_x) as usize][((self.y() - 1)-min_y) as usize];
+                let ne = map[((self.x() + 1)-min_x) as usize][((self.y() - 1)-min_y) as usize];
+                !nw && !n && !ne
+            },
+            Direction::S => {
+                let sw = map[((self.x() - 1)-min_x) as usize][((self.y() + 1)-min_y) as usize];
+                let s  = map[((self.x()    )-min_x) as usize][((self.y() + 1)-min_y) as usize];
+                let se = map[((self.x() + 1)-min_x) as usize][((self.y() + 1)-min_y) as usize];
+                !sw && !s && !se
+            },
+            Direction::W => {
+                let nw = map[((self.x() - 1)-min_x) as usize][((self.y() - 1)-min_y) as usize];
+                let w  = map[((self.x() - 1)-min_x) as usize][((self.y()    )-min_y) as usize];
+                let sw = map[((self.x() - 1)-min_x) as usize][((self.y() + 1)-min_y) as usize];
+                !nw && !w && !sw
+            },
+            Direction::E => {
+                let ne = map[((self.x() + 1)-min_x) as usize][((self.y() - 1)-min_y) as usize];
+                let e  = map[((self.x() + 1)-min_x) as usize][((self.y()    )-min_y) as usize];
+                let se = map[((self.x() + 1)-min_x) as usize][((self.y() + 1)-min_y) as usize];
+                !ne && !e && !se
+            },
         }
     }
     pub fn x(&self) -> i32 {
