@@ -1,6 +1,3 @@
-// #[macro_use]
-// extern crate lazy_static;
-
 use std::cmp::max;
 use aoctools::read_whole_file;
 use lazy_static::lazy_static;
