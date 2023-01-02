@@ -1,6 +1,8 @@
 use std::cell::RefCell;
 use std::collections::{HashSet, LinkedList};
+use std::io::Write;
 use std::ops::Deref;
+use std::ptr::write;
 use std::rc::Rc;
 use std::time::Instant;
 use aoctools::{parse, read_whole_file};
@@ -181,7 +183,7 @@ fn _move_blizzards_and_print(blizzards: Rc<RefCell<Vec<Blizzard>>>, number_of_bl
     for i in 0..number_of_blizzards {
         (*blizzards).borrow_mut()[i].mov(max_x, max_y);
     }
-    print(Rc::clone(&blizzards), expedition, max_x, max_y);
+    // print(Rc::clone(&blizzards), expedition, max_x, max_y);
 }
 
 fn check_if_blizzard_here(blizzards: Rc<RefCell<Vec<Blizzard>>>, number_of_blizzards: usize, check_x: usize, check_y: usize) -> bool {
@@ -233,6 +235,12 @@ fn build_path(list: Rc<List>, path: &mut LinkedList<(i32, i32)>) {
 }
 
 fn print_all(path: LinkedList<(i32, i32)>, blizzards: Rc<RefCell<Vec<Blizzard>>>, minutes: usize, max_x: usize, max_y: usize) {
+
+    let mut output = match std::fs::File::create("output.txt") {
+        Ok(f) => f,
+        Err(e) => panic!("Error opening file to write the result: {}", e),
+    };
+
     let mut bs = blizzards.deref().borrow_mut();
     for _ in 0..minutes + 1 { // + 1 to show initial state
         for i in 0..bs.len() {
@@ -252,22 +260,27 @@ fn print_all(path: LinkedList<(i32, i32)>, blizzards: Rc<RefCell<Vec<Blizzard>>>
         }
     }
     let mut m = 0;
+    writeln!(output, "************ PATH ************");
     println!("************ PATH ************");
     for p in path {
         if m > 0 {
+            writeln!(output, "\nMinute: {}", m);
             println!("\nMinute: {}", m);
         } else {
+            writeln!(output, "\nInitial state:");
             println!("\nInitial state:");
         }
-        print(Rc::clone(&rc_bs2), p, max_x, max_y);
+        print(Rc::clone(&rc_bs2), p, max_x, max_y, &mut output);
         move_blizzards(Rc::clone(&rc_bs2), num_of_blizzards, max_x, max_y);
         m += 1;
     }
+    writeln!(output);
     println!();
+    writeln!(output, "************ PATH ************");
     println!("************ PATH ************");
 }
 
-fn print(blizzards: Rc<RefCell<Vec<Blizzard>>>, expedition: (i32, i32), max_x: usize, max_y: usize) {
+fn print(blizzards: Rc<RefCell<Vec<Blizzard>>>, expedition: (i32, i32), max_x: usize, max_y: usize, output: &mut std::fs::File) {
     let mut m: Vec<Vec<char>> = vec![];
     for x in 0..max_x + 1 {
         m.push(vec![]);
@@ -294,31 +307,43 @@ fn print(blizzards: Rc<RefCell<Vec<Blizzard>>>, expedition: (i32, i32), max_x: u
     }
 
     if expedition.0 == 0 && expedition.1 == -1 {
+        write!(output, "#E#");
         print!("#E#");
     } else {
+        write!(output, "#.#");
         print!("#.#");
     }
     for _ in 0..max_x {
+        write!(output, "#");
         print!("#");
     }
+    writeln!(output);
     println!();
     for y in 0..max_y + 1 {
+        write!(output, "#");
         print!("#");
         for x in 0..max_x + 1 {
+            write!(output, "{}", m[x][y]);
             print!("{}", m[x][y]);
         }
+        writeln!(output, "#");
         println!("#");
     }
     for _ in 0..max_x + 1 {
+        write!(output, "#");
         print!("#");
     }
     if expedition.0 == max_x as i32 && expedition.1 == max_y as i32 + 1 {
+        write!(output, "E");
         print!("E");
     } else {
+        write!(output, ".");
         print!(".");
     }
+    write!(output, "#");
     print!("#");
-    println!()
+    writeln!(output);
+    println!();
 }
 
 #[derive(Debug)]
