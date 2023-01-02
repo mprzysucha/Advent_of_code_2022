@@ -32,3 +32,31 @@ pub fn parse(s: &str) -> u32 {
         Err(e) => panic!("Error parsing number: {}", e),
     }
 }
+
+pub fn parse_i32(s: &str) -> i32 {
+    match s.parse::<i32>() {
+        Ok(num) => num,
+        Err(e) => panic!("Error parsing number: {}", e),
+    }
+}
+
+pub fn parse_i64(s: &str) -> i64 {
+    match s.parse::<i64>() {
+        Ok(num) => num,
+        Err(e) => panic!("Error parsing number: {}", e),
+    }
+}
+
+pub fn parse_i128(s: &str) -> i128 {
+    match s.parse::<i128>() {
+        Ok(num) => num,
+        Err(e) => panic!("Error parsing number: {}", e),
+    }
+}
+
+pub fn parse_f64(s: &str) -> f64 {
+    match s.parse::<f64>() {
+        Ok(num) => num,
+        Err(e) => panic!("Error parsing number: {}", e),
+    }
+}
